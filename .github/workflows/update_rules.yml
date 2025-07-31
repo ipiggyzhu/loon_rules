@@ -13,6 +13,10 @@ on:
 jobs:
   update-lists:
     runs-on: ubuntu-latest
+    # --- 添加下面这两行 ---
+    permissions:
+      contents: write
+    # --- 添加结束 ---
     steps:
       # 步骤1: 检出您的仓库代码
       - name: Checkout Repository
