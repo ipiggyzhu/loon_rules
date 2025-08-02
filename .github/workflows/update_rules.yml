@@ -13,10 +13,9 @@ on:
 jobs:
   update-lists:
     runs-on: ubuntu-latest
-    # --- 添加下面这两行 ---
     permissions:
       contents: write
-    # --- 添加结束 ---
+      
     steps:
       # 步骤1: 检出您的仓库代码
       - name: Checkout Repository
@@ -25,12 +24,14 @@ jobs:
       # 步骤2: 更新第一个规则列表 (例如，ad-rules.list)
       - name: Update List A (ad-rules.list)
         id: update_list_a
-        # 将 github.repository_owner (您的用户名) 传入脚本环境
         env:
           GITHUB_USER: ${{ github.repository_owner }}
         run: |
-          # --- 配置列表A ---
           URLS="
+          # 订阅我们自己仓库里转换好的规则！
+          https://raw.githubusercontent.com/${{ github.repository }}/main/generated/converted-ad-rules.list
+          
+          # 添加其他格式标准的Loon规则源
           https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/PCDN.list
           https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/MyBlockAds.list
           https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/RejectAd.list
