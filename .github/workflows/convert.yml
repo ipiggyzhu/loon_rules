@@ -1,3 +1,4 @@
+# .github/workflows/convert.yml (最终完美版 - 使用 Artifacts)
 name: 1. Convert Upstream Rules
 
 on:
@@ -11,30 +12,18 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-
       - name: Install dependencies
         run: pip install requests
-
-      # 关键：运行您仓库中独立的 converter.py 文件
       - name: Run converter.py script
         run: python converter.py
-
-      - name: Commit and Push with PAT
-        env:
-          PAT: ${{ secrets.WORKFLOW_PAT }}
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add generated/
-          if ! git diff --staged --quiet; then
-            git commit -m "build(auto): 更新转换后的规则列表"
-            # 使用 PAT 进行推送，确保能触发后续工作流
-            git push https://x-access-token:${PAT}@github.com/${{ github.repository }}.git HEAD:${{ github.ref_name }}
-          else
-            echo "No changes in converted rules. Nothing to push."
-          fi
+      
+      # 将结果上传为产物
+      - name: Upload converted rules as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: converted-rules-artifact # 产物的名称
+          path: generated/ # 要上传的文件夹
