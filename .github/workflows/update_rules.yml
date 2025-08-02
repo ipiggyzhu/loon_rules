@@ -1,10 +1,7 @@
-# .github/workflows/aggregate.yml
 name: 2. Aggregate Final Rules
 
 on:
-  # 允许手动运行，使用仓库中最新的可用规则
   workflow_dispatch:
-  # 关键：当 generated 目录有 push 时自动触发
   push:
     paths:
       - 'generated/**'
@@ -22,7 +19,7 @@ jobs:
         env:
           GITHUB_USER: ${{ github.repository_owner }}
         run: |
-          # 拦截广告 ad-rules.list
+          # ad-rules.list
           (
             echo "! Title: My Custom Ad Rules (Aggregated)"
             echo "! Author: $GITHUB_USER"
@@ -30,9 +27,9 @@ jobs:
             echo "! Homepage: https://github.com/$GITHUB_USER/${{ github.event.repository.name }}"
             echo ""
             (
-              # 直接从本地文件读取converted-ad-rules.list
+              # 直接读取干净的本地文件
               cat generated/converted-ad-rules.list
-              # 其他外部源继续使用 curl
+              # 其他外部源
               curl -sL "https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/PCDN.list"
               curl -sL "https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/MyBlockAds.list"
               curl -sL "https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/RejectAd.list"
@@ -41,7 +38,7 @@ jobs:
             ) | grep -vE '^!|^#|^$' | sort -u
           ) > ad-rules.list
 
-          # 网络走直连 direct-rules.list
+          # direct-rules.list
           (
             echo "! Title: My Custom Direct Rules (Aggregated)"
             echo "! Author: $GITHUB_USER"
