@@ -1,32 +1,19 @@
-name: 2. Aggregate Final Rules
+name: 2. Aggregate Final Rules (8:00 AM)
 
 on:
   workflow_dispatch:
-  workflow_run:
-    # 关键：监听名为 "1. Convert Upstream Rules" 的工作流
-    workflows: ["1. Convert Upstream Rules"]
-    # 关键：只在该工作流成功完成后触发
-    types:
-      - completed
+  schedule:
+    # 每天 UTC 00:00 运行 (北京时间 8:00)
+    - cron: "0 0 * * *"
 
 jobs:
   aggregate:
-    # 关键：添加一个判断，确保上一个工作流是成功了，而不是失败了
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      # 关键：下载由上一个工作流上传的产物
-      - name: Download converted rules artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: converted-rules-artifact # 必须和上传时的名称一致
-          # 关键：需要指定触发本次运行的那个工作流的ID
-          run-id: ${{ github.event.workflow_run.id }}
 
       - name: Aggregate all rules
         env:
@@ -40,7 +27,7 @@ jobs:
             echo "! Homepage: https://github.com/$GITHUB_USER/${{ github.event.repository.name }}"
             echo ""
             (
-              # 直接读取下载下来的、干净的本地文件
+              # 直接读取生成的本地文件
               cat generated/converted-ad-rules.list
               # 其他外部源
               curl -sL "https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/PCDN.list"
