@@ -35,6 +35,7 @@ jobs:
           https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/MyBlockAds.list
           https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/RejectAd.list
           https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/AdRules.list
+          https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/Advertising/Advertising.list
           "
           OUTPUT_FILE="ad-rules.list"
           # --- 配置结束 ---
