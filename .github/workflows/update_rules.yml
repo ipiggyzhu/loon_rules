@@ -1,106 +1,71 @@
-name: Auto Update Ad Rules Lists with Header
+# .github/workflows/aggregate.yml
+name: 2. Aggregate Final Rules
 
 on:
-  # 允许您在 Actions 选项卡手动运行此工作流
+  # 允许手动运行，使用仓库中最新的可用规则
   workflow_dispatch:
-
-  # 设置定时任务
-  schedule:
-    # 每天的0点0分 (UTC时间) 运行一次。
-    # UTC时间0点相当于北京时间早上8点。
-    - cron: "0 0 * * *"
+  # 关键：当 generated 目录有 push 时自动触发
+  push:
+    paths:
+      - 'generated/**'
 
 jobs:
-  update-lists:
+  aggregate:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      
     steps:
-      # 步骤1: 检出您的仓库代码
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 步骤2: 更新第一个规则列表 (例如，ad-rules.list)
-      - name: Update List A (ad-rules.list)
-        id: update_list_a
+      - name: Aggregate all rules
         env:
           GITHUB_USER: ${{ github.repository_owner }}
         run: |
-          URLS="
-          # 订阅我们自己仓库里转换好的规则！
-          https://raw.githubusercontent.com/${{ github.repository }}/main/generated/converted-ad-rules.list
-          
-          # 添加其他格式标准的Loon规则源
-          https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/PCDN.list
-          https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/MyBlockAds.list
-          https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/RejectAd.list
-          https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/AdRules.list
-          https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/Advertising/Advertising.list
-          "
-          OUTPUT_FILE="ad-rules.list"
-          # --- 配置结束 ---
+          # 拦截广告 ad-rules.list
+          (
+            echo "! Title: My Custom Ad Rules (Aggregated)"
+            echo "! Author: $GITHUB_USER"
+            echo "! Last Updated: $(date -u --iso-8601=seconds)"
+            echo "! Homepage: https://github.com/$GITHUB_USER/${{ github.event.repository.name }}"
+            echo ""
+            (
+              # 直接从本地文件读取converted-ad-rules.list
+              cat generated/converted-ad-rules.list
+              # 其他外部源继续使用 curl
+              curl -sL "https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/PCDN.list"
+              curl -sL "https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/MyBlockAds.list"
+              curl -sL "https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/RejectAd.list"
+              curl -sL "https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/AdRules.list"
+              curl -sL "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/Advertising/Advertising.list"
+            ) | grep -vE '^!|^#|^$' | sort -u
+          ) > ad-rules.list
 
-          echo "Updating $OUTPUT_FILE with header..."
-          
-          # 写入头部信息 (使用 > 覆盖旧文件)
-          echo "! Title: My Custom Ad Rules (List A)" > $OUTPUT_FILE
-          echo "! Author: $GITHUB_USER" >> $OUTPUT_FILE
-          echo "! Last Updated: $(date -u --iso-8601=seconds)" >> $OUTPUT_FILE
-          echo "! Homepage: https://github.com/$GITHUB_USER/${{ github.event.repository.name }}" >> $OUTPUT_FILE
-          echo "" >> $OUTPUT_FILE
+          # 网络走直连 direct-rules.list
+          (
+            echo "! Title: My Custom Direct Rules (Aggregated)"
+            echo "! Author: $GITHUB_USER"
+            echo "! Last Updated: $(date -u --iso-8601=seconds)"
+            echo "! Homepage: https://github.com/$GITHUB_USER/${{ github.event.repository.name }}"
+            echo ""
+            (
+              curl -sL "https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/Apple.list"
+              curl -sL "https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/Media-Direct"
+              curl -sL "https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/Media-Proxy.list"
+              curl -sL "https://raw.githubusercontent.com/sooyaaabo/KeleeOne/Loon/Rule/ChinaMax.list"
+              curl -sL "https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/Lan"
+              curl -sL "https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/CN_REGION"
+            ) | grep -vE '^!|^#|^$' | sort -u
+          ) > direct-rules.list
 
-          # 追加处理后的规则 (使用 >>)
-          (for url in $URLS; do curl -sL "$url"; done) | grep -vE '^!|^#|^$' | sort -u >> $OUTPUT_FILE
-
-          echo "Update for $OUTPUT_FILE complete."
-          echo "output_file_a=$OUTPUT_FILE" >> $GITHUB_OUTPUT
-
-      # 步骤3: 更新第二个规则列表 (例如，direct-rules.list)
-      - name: Update List B (direct-rules.list)
-        id: update_list_b
-        env:
-          GITHUB_USER: ${{ github.repository_owner }}
-        run: |
-          # --- 配置列表B ---
-          URLS="
-          https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/Apple.list
-          https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/Media-Direct
-          https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/Media-Proxy.list
-          https://raw.githubusercontent.com/sooyaaabo/KeleeOne/Loon/Rule/ChinaMax.list
-          https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/Lan
-          https://raw.githubusercontent.com/sooyaaabo/Loon/main/Rule/CN_REGION
-          "
-          OUTPUT_FILE="direct-rules.list"
-          # --- 配置结束 ---
-
-          echo "Updating $OUTPUT_FILE with header..."
-
-          # 写入头部信息
-          echo "! Title: My Custom Domain Rules (List B)" > $OUTPUT_FILE
-          echo "! Author: $GITHUB_USER" >> $OUTPUT_FILE
-          echo "! Last Updated: $(date -u --iso-8601=seconds)" >> $OUTPUT_FILE
-          echo "! Homepage: https://github.com/$GITHUB_USER/${{ github.event.repository.name }}" >> $OUTPUT_FILE
-          echo "" >> $OUTPUT_FILE
-
-          # 追加处理后的规则
-          (for url in $URLS; do curl -sL "$url"; done) | grep -vE '^!|^#|^$' | sort -u >> $OUTPUT_FILE
-
-          echo "Update for $OUTPUT_FILE complete."
-          echo "output_file_b=$OUTPUT_FILE" >> $GITHUB_OUTPUT
-
-      # 步骤4: 提交并推送两个文件的更改
-      - name: Commit and Push changes
+      - name: Commit and Push final lists
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          
-          git add ${{ steps.update_list_a.outputs.output_file_a }} ${{ steps.update_list_b.outputs.output_file_b }}
-          
-          # 检查是否有文件更改需要提交
-          if git diff --staged --quiet; then
-            echo "No changes to commit."
-          else
-            git commit -m "feat: 自动更新规则列表"
+          git add ad-rules.list direct-rules.list
+          if ! git diff --staged --quiet; then
+            git commit -m "feat(rules): 自动更新聚合规则列表"
             git push
+          else
+            echo "No changes in final rules. Nothing to push."
           fi
